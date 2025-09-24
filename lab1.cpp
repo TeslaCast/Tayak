@@ -8,7 +8,7 @@
 
 using namespace std;
 
-// ????????? ??? ????????
+// getting priority of operation
 int getPriority(const string& op) {
     if (op == "+" || op == "-") return 1;   
     if (op == "*" || op == "/") return 2;   
@@ -17,178 +17,159 @@ int getPriority(const string& op) {
     return 0;
 }
 
-// ???????? ?? ????????
+// Check - atom is operator
 bool isOperator(const string& t) {
     return t == "+" || t == "-" || t == "*" || t == "/" || t == "^";
 }
 
-// ????????? ?? ????????????
-vector<string> tokenize(const string& expr) {
-    vector<string> tokens;          
+// Split input string into atoms
+vector<string> atomize(const string& expr) {
+    vector<string> atoms;          
     for (size_t i = 0; i < expr.size();) {
         unsigned char ch = expr[i]; 
 
-        // - ???????
+        // skip spaces
         if (isspace(ch)) { i++; continue; }
 
-        // ????????? + ? - (????? ???? ????????)
-        if (ch == '+' || ch == '-') {
-            bool unary = tokens.empty() || isOperator(tokens.back()) || tokens.back() == "(" || tokens.back() == ",";
-            if (unary) {
-                // ????? ? ??????, ????. -2
-                if (i + 1 < expr.size() && (isdigit((unsigned char)expr[i+1]) || expr[i+1] == '.')) {
-                    string num(1, ch); // ?????????? ????
-                    i++;
-                    while (i < expr.size() && (isdigit((unsigned char)expr[i]) || expr[i] == '.'))
-                        num.push_back(expr[i++]); // ?????? ?????
-                    tokens.push_back(num);
-                    continue;
-                } else {
-                    // ??????? ????? ????? ??????? ??? ???????? ? ?????????? ? 0 - (...)
-                    tokens.push_back("0");
-                    tokens.push_back(string(1, ch));
-                    i++;
-                    continue;
-                }
-            }
-            // ??????? ???????? + ??? -
-            tokens.push_back(string(1, ch));
-            i++;
-            continue;
-        }
-
-        // ????? (??? ?????)
+        // Numbers int or float
         if (isdigit(ch) || ch == '.') {
             string num;
             while (i < expr.size() && (isdigit((unsigned char)expr[i]) || expr[i] == '.'))
                 num.push_back(expr[i++]);
-            tokens.push_back(num);
+            atoms.push_back(num);
             continue;
         }
 
-        // ??????? ??? ??? (pow)
+        // collect function fr o
         if (isalpha(ch)) {
             string id;
             while (i < expr.size() && isalpha((unsigned char)expr[i]))
                 id.push_back(expr[i++]);
-            tokens.push_back(id);
+            atoms.push_back(id);
             continue;
         }
 
-        // ??? ????????? ????????? ??????? (??????, ???????, ?????????)
-        tokens.push_back(string(1, ch));
+
+        atoms.push_back(string(1, ch));
         i++;
     }
-    return tokens;
+    return atoms;
 }
 
-// --- ??????? ? ???????? ???????? ?????? (RPN) ---
-vector<string> toRPN(const vector<string>& tokens) {
-    vector<string> out;      // ???????? ???????
-    stack<string> ops;       // ???? ??????????
+// Convert atoms to rpn
+vector<string> toRPN(const vector<string>& atoms) {
+    vector<string> out;      
+    stack<string> ops;       
 
-    for (auto& token : tokens) {
-        // ???? ?????
-        if (isdigit((unsigned char)token[0]) || token[0] == '.' || 
-           ((token[0] == '+' || token[0] == '-') && token.size() > 1))
+    //add to stack
+    for (auto& atom : atoms) {
+        // Number
+        if (isdigit((unsigned char)atom[0]) || atom[0] == '.')
         {
-            out.push_back(token);
+            out.push_back(atom);
         }
-        // ???????
-        else if (isalpha((unsigned char)token[0])) {
-            ops.push(token);
+
+        // Function
+        else if (isalpha((unsigned char)atom[0])) {
+            ops.push(atom);
         }
-        // ??????? (??????????? ?????????? ???????)
-        else if (token == ",") {
+        // Function argument separator
+        else if (atom == ",") {
             while (!ops.empty() && ops.top() != "(") {
                 out.push_back(ops.top()); ops.pop();
             }
         }
-        // ????????
-        else if (isOperator(token)) {
+        // Operator
+        else if (isOperator(atom)) {
             while (!ops.empty() && isOperator(ops.top())) {
                 int topPr = getPriority(ops.top());
-                int curPr = getPriority(token);
-                // ^ — ??????????????????
-                if (topPr > curPr || (topPr == curPr && token != "^")) {
+                int curPr = getPriority(atom);
+                // ^ is right-associative
+                if (topPr > curPr || (topPr == curPr && atom != "^")) {
                     out.push_back(ops.top()); ops.pop();
                 } else break;
             }
-            ops.push(token);
+            ops.push(atom);
         }
-        // ??????????? ??????
-        else if (token == "(") {
-            ops.push(token);
+
+       //opening parenthesis
+        else if (atom == "(") {
+            ops.push(atom);
         }
-        // ??????????? ??????
-        else if (token == ")") {
+
+        // closing parenthesis
+        else if (atom == ")") {
             while (!ops.empty() && ops.top() != "(") {
                 out.push_back(ops.top()); ops.pop();
             }
-            if (ops.empty()) throw runtime_error("miss ')'");
-            ops.pop(); // ?????? "("
-            // ???? ????? ??????? ???? ??????? ? ???????? ??
+            if (ops.empty()) throw runtime_error("Missing '('");
+            ops.pop(); 
+
             if (!ops.empty() && isalpha((unsigned char)ops.top()[0])) {
                 out.push_back(ops.top()); ops.pop();
             }
         }
-        else throw runtime_error("Unknown token: " + token);
+        else throw runtime_error("Unknown atom: " + atom);
     }
 
-    // ?????????? ??? ?? ?????
+    // clear remaining operators
     while (!ops.empty()) {
-        if (ops.top() == "(") throw runtime_error("Mismatched parentheses");
+        if (ops.top() == "(") throw runtime_error("miss '(' or ')'");
         out.push_back(ops.top()); ops.pop();
     }
     return out;
 }
 
-// --- ?????????? ????????? ? RPN ---
+    //calculate RPN 
 double evalRPN(const vector<string>& rpn) {
-    stack<double> st;  // ???? ?????
+    stack<double> st;  
 
-    for (auto& token : rpn) {
-        // ?????
-        if (isdigit((unsigned char)token[0]) || token[0] == '.' || 
-           ((token[0] == '+' || token[0] == '-') && token.size() > 1))
+    for (auto& atom : rpn) {
+        // Number
+        if (isdigit((unsigned char)atom[0]) || atom[0] == '.')
         {
-            st.push(stod(token));
+            st.push(stod(atom));
         }
-        // ?????????
-        else if (isOperator(token)) {
+
+        // Operator
+        else if (isOperator(atom)) {
             if (st.size() < 2) throw runtime_error("Not enough operands");
             double b = st.top(); st.pop();
             double a = st.top(); st.pop();
-            if (token == "+") st.push(a + b);
-            else if (token == "-") st.push(a - b);
-            else if (token == "*") st.push(a * b);
-            else if (token == "/") {
+            if (atom == "+") st.push(a + b);
+            else if (atom == "-") st.push(a - b);
+            else if (atom == "*") st.push(a * b);
+            else if (atom == "/") {
                 if (b == 0) throw runtime_error("Division by zero");
                 st.push(a / b);
             }
-            else if (token == "^") st.push(pow(a, b));
+            else if (atom == "^") st.push(pow(a, b));
         }
-        // ??????? pow
-        else if (token == "pow") {
+        
+        // Function pow
+        else if (atom == "pow") {
             if (st.size() < 2) throw runtime_error("pow requires two args");
             double b = st.top(); st.pop();
             double a = st.top(); st.pop();
             st.push(pow(a, b));
         }
-        else throw runtime_error("Unknown token: " + token);
+        else throw runtime_error("Unknown atom: " + atom);
     }
     if (st.size() != 1) throw runtime_error("Evaluation error");
     return st.top();
 }
 
-// --- ????????? ?????? ????????? ---
+// 
 void process(const string& expr) {
+    cout << "Expr: " << expr << "\n";
     try {
-        auto tokens = tokenize(expr);   // ???????????
-        auto rpn = toRPN(tokens);       // ? ???
-        cout << "Expr: " << expr << "\nRPN: ";
+        auto atoms = atomize(expr);   
+        auto rpn = toRPN(atoms);       
+
+        cout << "RPN: ";
         for (auto& t : rpn) cout << t << " ";
         cout << "\n";
+
         cout << "Result = " << evalRPN(rpn) << "\n";
     } catch (exception& e) {
         cout << "Error: " << e.what() << "\n";
@@ -196,22 +177,43 @@ void process(const string& expr) {
     cout << "-------------------\n";
 }
 
-// --- ????? ---
+
+
+
+//   testiki
 void runTests() {
     vector<string> tests = {
-        "-1+2", "1+-2", "2*-3", "-(1+2)",
-        "pow(-2,3)", "pow(2,-3)", "1+2*(3-4)",
+        "1+2", "2*3", "(1+2)",
+        "pow(2,3)", "pow(pow(2,3),2)", "1+2*(3-4)",
         "(12.5+7)/3", "((1+2)", "1/0",
-        "3.14.15+2", "5+", "2^3^2", "10+abc"
+        "3.14+0.2", "5+", "2^3^2", "10+abc"
     };
+
+
     for (auto& e : tests) process(e);
 }
 
-// --- main ---
+
+
+
+
+
+
 int main() {
     cout << "1 - Enter expression\n2 - Run tests\nChoice: ";
-    int c; cin >> c; cin.ignore();
-    if (c == 1) { string e; getline(cin,e); process(e); }
+    int c; 
+    cin >> c; 
+    cin.ignore();
+
+
+    if (c == 1) { 
+        string e; 
+        getline(cin,e); 
+        process(e); 
+    }
     else if (c == 2) runTests();
-    else cout << "Invalid choice\n";
+
+    else cout << "Invalid choice";
+
+
 }
