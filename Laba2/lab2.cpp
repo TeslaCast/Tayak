@@ -129,6 +129,53 @@ public:
     }
 };
 
+
+void generateAcceptedStrings(const Automat& automaton, int maxLen) {
+    if (!automaton.isDeterministic()) {
+        cout << "Автомат недетерминирован — сначала детерминируй его.\n";
+        return;
+    }
+
+    set<char> alphabet;
+    for (auto& [key, _] : automaton.transitions)
+        alphabet.insert(key.second);
+
+    cout << "\nВсе принимаемые строки длиной ≤ " << maxLen << ":\n";
+
+    queue<pair<string,string>> q; // (state, word)
+    q.push({automaton.startState, ""});
+
+    while (!q.empty()) {
+        auto [state, word] = q.front(); q.pop();
+
+        if (automaton.finalStates.count(state))
+            cout << (word.empty() ? "ε" : word) << "\n";
+
+        if ((int)word.size() >= maxLen) continue;
+
+        for (char sym : alphabet) {
+            auto it = automaton.transitions.find({state, sym});
+            if (it != automaton.transitions.end()) {
+                string next = *it->second.begin();
+                q.push({next, word + sym});
+            }
+        }
+    }
+}
+
+
+void printGraph(const Automat& automaton) {
+    cout << "\nГраф переходов:\n";
+    for (auto& [key, nextStates] : automaton.transitions) {
+        for (auto& st : nextStates) {
+            cout << key.first << " --" << key.second << "--> " << st;
+            if (automaton.finalStates.count(st)) cout << " [final]";
+            cout << "\n";
+        }
+    }
+}
+
+
 int main() {
     setlocale(LC_ALL, "Russian");
     try {
@@ -146,13 +193,16 @@ int main() {
             dfa.print();
         }
 
+        printGraph(dfa);
+        generateAcceptedStrings(dfa, 3); 
+
         cout << "\nВведите строку для проверки: ";
         string input;
         cin >> input;
 
         bool res = dfa.accepts(input);
         cout << (res ? "Строка принимается автоматом\n" : "Строка не принимается автоматом\n");
-
+        
     } catch (const exception& ex) {
         cerr << "Ошибка: " << ex.what() << "\n";
     }
