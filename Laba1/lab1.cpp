@@ -56,7 +56,7 @@ vector<string> atomize(const string& expr) {
     return atoms;
 }
 
-// Convert atoms to rpn
+//convert atoms to rpn
 vector<string> toRPN(const vector<string>& atoms) {
     vector<string> out;      
     stack<string> ops;       
@@ -76,7 +76,8 @@ vector<string> toRPN(const vector<string>& atoms) {
         // Function argument separator
         else if (atom == ",") {
             while (!ops.empty() && ops.top() != "(") {
-                out.push_back(ops.top()); ops.pop();
+                out.push_back(ops.top()); 
+                ops.pop();
             }
         }
         // Operator
@@ -92,12 +93,12 @@ vector<string> toRPN(const vector<string>& atoms) {
             ops.push(atom);
         }
 
-       //opening parenthesis
+       //opening  parenthesis
         else if (atom == "(") {
             ops.push(atom);
         }
 
-        // closing parenthesis
+        // closing  parenthesis
         else if (atom == ")") {
             while (!ops.empty() && ops.top() != "(") {
                 out.push_back(ops.top()); ops.pop();
@@ -146,7 +147,7 @@ double evalRPN(const vector<string>& rpn) {
             else if (atom == "^") st.push(pow(a, b));
         }
         
-        // Function pow
+        // pow
         else if (atom == "pow") {
             if (st.size() < 2) throw runtime_error("pow requires two args");
             double b = st.top(); st.pop();
