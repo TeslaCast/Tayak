@@ -10,7 +10,7 @@
 
 using namespace std;
 
-// (текущее состояние, символ) -> множество следующих состояний
+
 using TransitionTable = map<pair<string, char>, set<string>>;
 
 class Automat {
@@ -20,7 +20,6 @@ public:
     set<string> finalStates;
     set<string> allStates;
 
-    // Загрузка автомата из файла
     void loadFromFile(const string& filename) {
         ifstream fin(filename);
         if (!fin.is_open()) throw runtime_error("Не удалось открыть файл");
@@ -50,7 +49,7 @@ public:
         }
     }
 
-    // Проверка: детерминирован ли автомат
+    //детерминирован ли автомат
     bool isDeterministic() const {
         for (auto& [key, nextStates] : transitions) {
             if (nextStates.size() > 1) return false;
@@ -58,7 +57,7 @@ public:
         return true;
     }
 
-    // Преобразование НКА в ДКА (алгоритм подмножеств)
+    //  детерминирование
     Automat determinize() const {
         Automat dfa;
         dfa.startState = startState;
@@ -76,7 +75,6 @@ public:
             set<string> curSet = q.front(); q.pop();
             string curName = stateName[curSet];
 
-            // финальное, если хоть одно состояние финальное в исходнике
             for (auto& s : curSet)
                 if (finalStates.count(s)) dfa.finalStates.insert(curName);
 
@@ -104,7 +102,7 @@ public:
         return dfa;
     }
 
-    // Проверка строки
+    // проверка строки
     bool accepts(const string& input) const {
         if (!isDeterministic())
             throw runtime_error("Автомат недетерминирован. Сначала преобразуйте в ДКА.");
@@ -117,7 +115,7 @@ public:
         return finalStates.count(curState);
     }
 
-    // Печать переходов в формате исходного файла (qX,a=fY)
+
     void print() const {
         for (auto& [key, nextStates] : transitions) {
             for (auto& st : nextStates) {
@@ -131,18 +129,13 @@ public:
 
 
 void generateAcceptedStrings(const Automat& automaton, int maxLen) {
-    if (!automaton.isDeterministic()) {
-        cout << "Автомат недетерминирован — сначала детерминируй его.\n";
-        return;
-    }
-
     set<char> alphabet;
     for (auto& [key, _] : automaton.transitions)
         alphabet.insert(key.second);
 
     cout << "\nВсе принимаемые строки длиной ≤ " << maxLen << ":\n";
 
-    queue<pair<string,string>> q; // (state, word)
+    queue<pair<string,string>> q; 
     q.push({automaton.startState, ""});
 
     while (!q.empty()) {
@@ -177,10 +170,10 @@ void printGraph(const Automat& automaton) {
 
 
 int main() {
-    setlocale(LC_ALL, "Russian");
+    setlocale(LC_ALL, "russian");
     try {
         Automat nfa;
-        nfa.loadFromFile("var3_nd.txt");
+        nfa.loadFromFile("var4.txt");
 
         cout << "Автомат загружен.\n";
         cout << "Детерминированный? " << (nfa.isDeterministic() ? "Да" : "Нет") << "\n";
@@ -194,7 +187,7 @@ int main() {
         }
 
         printGraph(dfa);
-        generateAcceptedStrings(dfa, 3); 
+        generateAcceptedStrings(dfa, 8); 
 
         cout << "\nВведите строку для проверки: ";
         string input;
