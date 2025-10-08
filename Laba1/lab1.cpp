@@ -73,28 +73,30 @@ vector<string> atomize(const string& expr) {
        
     }
 
-     for(size_t i = 1;i < atoms.size();){
-            if((atoms[i] =="-" || atoms[i] =="+")){
-                size_t j = i - 1;
-                while (j < atoms.size() && (atoms[j] =="+")){
-                    j++;
-                    size_t minusCount = 0;
-                    for(size_t k = i -1; k < j; ++k){
-                        if( atoms[k] == "-") minusCount++;
-                        string result =  (minusCount % 2 == 0) ? "+" : "-";
-                        atoms.erase(atoms.begin() + (i - 1), atoms.begin() + j);
-                        atoms.insert(atoms.begin() + (i - 1), result);
+    for(size_t i = 1;i < atoms.size();){
+        if((atoms[i] =="-" || atoms[i] =="+") && (atoms[i-1] == "-" || atoms[i-1] == "+")){
+            size_t j = i - 1;
+            while (j < atoms.size() && (atoms[j] =="-" || atoms[j] =="+")) j++;
 
-                        if (i > 1) i--;
-                        else i++;
+            size_t minusCount = 0;
+            for(size_t k = i -1; k < j; ++k){
+                if( atoms[k] == "-") minusCount++;
+                string result =  (minusCount % 2 == 0) ? "+" : "-";
+                atoms.erase(atoms.begin() + (i - 1), atoms.begin() + j);
+                atoms.insert(atoms.begin() + (i - 1), result);
 
-                    }
-                }
+                if (i > 1) i--;
+            }
+                else {
+                    i++;
+                
             }
         }
+    }
 
     return atoms;
 }
+
 
 //convert atoms to rpn
 vector<string> toRPN(const vector<string>& atoms) {
