@@ -13,13 +13,18 @@ int getPriority(const string& op) {
     if (op == "+" || op == "-") return 1;   
     if (op == "*" || op == "/") return 2;   
     if (op == "^") return 3;                
-    if (op == "pow") return 4;              
+    if (op == "pow") return 4; 
+    if (op == "u+" || op =="u-") return 5;             
     return 0;
 }
 
 // Check - atom is operator
 bool isOperator(const string& t) {
     return t == "+" || t == "-" || t == "*" || t == "/" || t == "^";
+}
+
+bool isUnary(const string& op) {
+    return op == "u+" || op =="u-";
 }
 
 // Split input string into atoms
@@ -34,8 +39,17 @@ vector<string> atomize(const string& expr) {
         // Numbers int or float
         if (isdigit(ch) || ch == '.') {
             string num;
-            while (i < expr.size() && (isdigit((unsigned char)expr[i]) || expr[i] == '.'))
+            int dotC = 0;
+            while (i < expr.size() && (isdigit((unsigned char)expr[i]) || expr[i] == '.')){
+                if(expr[i] == '.'){
+                    dotC++;
+                    if(dotC > 1){
+                        throw runtime_error("too many dots");
+                    }
+                }   
+                
                 num.push_back(expr[i++]);
+            }
             atoms.push_back(num);
             continue;
         }
@@ -50,9 +64,35 @@ vector<string> atomize(const string& expr) {
         }
 
 
+        
+
+
         atoms.push_back(string(1, ch));
         i++;
+
+       
     }
+
+     for(size_t i = 1;i < atoms.size();){
+            if((atoms[i] =="-" || atoms[i] =="+")){
+                size_t j = i - 1;
+                while (j < atoms.size() && (atoms[j] =="+")){
+                    j++;
+                    size_t minusCount = 0;
+                    for(size_t k = i -1; k < j; ++k){
+                        if( atoms[k] == "-") minusCount++;
+                        string result =  (minusCount % 2 == 0) ? "+" : "-";
+                        atoms.erase(atoms.begin() + (i - 1), atoms.begin() + j);
+                        atoms.insert(atoms.begin() + (i - 1), result);
+
+                        if (i > 1) i--;
+                        else i++;
+
+                    }
+                }
+            }
+        }
+
     return atoms;
 }
 
@@ -85,7 +125,6 @@ vector<string> toRPN(const vector<string>& atoms) {
             while (!ops.empty() && isOperator(ops.top())) {
                 int topPr = getPriority(ops.top());
                 int curPr = getPriority(atom);
-                // ^ is right-associative
                 if (topPr > curPr || (topPr == curPr && atom != "^")) {
                     out.push_back(ops.top()); ops.pop();
                 } else break;
@@ -187,7 +226,7 @@ void runTests() {
         "1+2", "2*3", "(1+2)",
         "pow(2,3)", "pow(pow(2,3),2)", "1+2*(3-4)",
         "(12.5+7)/3", "((1+2)", "1/0",
-        "3.14+0.2", "5+", "2^3^2", "10+abc"
+        "3.14+.2", "5+", "2^3^2", "10+abc"
     };
 
 
