@@ -3,5 +3,7 @@
         "iostream": "cpp",
         "exception": "cpp",
         "stdexcept": "cpp"
-    }
+    },
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": []
 }

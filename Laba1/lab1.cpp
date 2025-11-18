@@ -6,6 +6,13 @@
 #include <cmath>
 #include <stdexcept>
 
+
+
+
+
+
+
+
 using namespace std;
 
 // getting priority of operation
@@ -28,74 +35,71 @@ bool isUnary(const string& op) {
 }
 
 // Split input string into atoms
-vector<string> atomize(const string& expr) {
-    vector<string> atoms;          
-    for (size_t i = 0; i < expr.size();) {
-        unsigned char ch = expr[i]; 
+ vector<string> atomize(const string& expr) {
+    vector<string> atoms;
+        for (size_t i = 0; i < expr.size();) {
+                                unsigned char ch = expr[i];
 
-        // skip spaces
-        if (isspace(ch)) { i++; continue; }
-
-        // Numbers int or float
-        if (isdigit(ch) || ch == '.') {
-            string num;
-            int dotC = 0;
-            while (i < expr.size() && (isdigit((unsigned char)expr[i]) || expr[i] == '.')){
-                if(expr[i] == '.'){
-                    dotC++;
-                    if(dotC > 1){
-                        throw runtime_error("too many dots");
+                                if (isspace(ch)) { i++; continue; }
+                                if (isdigit(ch) || ch == '.') {
+                                string num;
+                                int dotC = 0;
+                    while (i < expr.size() && (isdigit((unsigned char)expr[i]) || expr[i] == '.')) {
+                        if (expr[i] == '.') {
+                        dotC++;
+                if (dotC > 1) throw runtime_error("too many dots");
+                            }
+            num.push_back(expr[i++]);
                     }
-                }   
-                
-                num.push_back(expr[i++]);
-            }
-            atoms.push_back(num);
-            continue;
+        atoms.push_back(num);
+        continue;
         }
 
-        // collect function fr o
-        if (isalpha(ch)) {
-            string id;
-            while (i < expr.size() && isalpha((unsigned char)expr[i]))
-                id.push_back(expr[i++]);
+
+    if (isalpha(ch)) {
+        string id;
+        while (i < expr.size() && isalpha((unsigned char)expr[i]))
+            id.push_back(expr[i++]);
             atoms.push_back(id);
             continue;
-        }
-
-
-        
-
-
-        atoms.push_back(string(1, ch));
-        i++;
-
-       
-    }
-
-    for(size_t i = 1;i < atoms.size();){
-        if((atoms[i] =="-" || atoms[i] =="+") && (atoms[i-1] == "-" || atoms[i-1] == "+")){
-            size_t j = i - 1;
-            while (j < atoms.size() && (atoms[j] =="-" || atoms[j] =="+")) j++;
-
-            size_t minusCount = 0;
-            for(size_t k = i -1; k < j; ++k){
-                if( atoms[k] == "-") minusCount++;
-                string result =  (minusCount % 2 == 0) ? "+" : "-";
-                atoms.erase(atoms.begin() + (i - 1), atoms.begin() + j);
-                atoms.insert(atoms.begin() + (i - 1), result);
-
-                if (i > 1) i--;
             }
-                else {
+
+            // одиночные символы
+            atoms.push_back(string(1, ch));
                     i++;
-                
-            }
+                        }
+
+
+    for (size_t i = 1; i < atoms.size();) {
+        if ((atoms[i] == "-" || atoms[i] == "+") && (atoms[i - 1] == "-" || atoms[i - 1] == "+")) {
+
+        size_t j = i - 1;
+        while (j < atoms.size() && (atoms[j] == "-" || atoms[j] == "+")) j++;
+
+        size_t minusCount = 0;
+        for (size_t k = i - 1; k < j; ++k) if (atoms[k] == "-") minusCount++;
+
+        string result = (minusCount % 2 == 0) ? "+" : "-";
+
+        atoms.erase(atoms.begin() + (i - 1), atoms.begin() + j);
+        atoms.insert(atoms.begin() + (i - 1), result);
+
+        if (i > 1) i--;
+        } else {
+            i++;
         }
     }
 
     return atoms;
 }
+
+           
+
+
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
 
 
 //convert atoms to rpn
